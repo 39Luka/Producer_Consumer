@@ -8,22 +8,28 @@ public class Restaurante {
 
     public int asignarMesa(String name) {
         int mesa;
+        boolean aviso = false; // flag para imprimir “debe esperar” solo una vez
+
         synchronized (lockMesa) {
             while ((mesa = encontrarMesa()) == -1) {
-                try {
+                if (!aviso) { // si aún no imprimimos el mensaje
                     System.out.println("El " + Thread.currentThread().getName() + " debe esperar");
+                    aviso = true; // marcamos que ya se imprimió
+                }
+                try {
                     lockMesa.wait();
                 } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                    Thread.currentThread().interrupt();
+                    return -1; // salir si se interrumpe
                 }
             }
 
-            mesas[mesa] = name;
-            System.out.println("El " + Thread.currentThread().getName() + " se ha sentado el la mesa" + mesa);
-
+            mesas[mesa] = name; // asignamos la mesa
+            System.out.println("El " + Thread.currentThread().getName() + " se ha sentado en la mesa " + mesa);
             return mesa;
         }
     }
+
 
     private int encontrarMesa() {
         for (int i = 0; i < AFORO; i++) {
